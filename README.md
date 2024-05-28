@@ -21,9 +21,9 @@ Halo 2.0 插件-图片链接处理
 ### 插件效果图
 
 图片处理前
-![after-time.png](image%2Fafter-time.png)
-图片处理后
 ![before-time.png](image%2Fbefore-time.png)
+图片处理后
+![after-time.png](image%2Fafter-time.png)
 
 ### 插件配置界面
 
