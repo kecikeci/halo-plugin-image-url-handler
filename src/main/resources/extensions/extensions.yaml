@@ -1,0 +1,9 @@
+apiVersion: plugin.halo.run/v1alpha1
+kind: ExtensionPointDefinition
+metadata:
+  name: plugin-image-url-handler-extensions
+spec:
+  className: me.forxx.plugin.ImageUrlHandlerWebFilter
+  type: MULTI_INSTANCE
+  displayName: "图片url处理"
+  description: "为对象存储或CDN的图片处理提供支持。其本质就是在图片url后面拼接处理参数。"

@@ -1,0 +1,18 @@
+apiVersion: v1alpha1
+kind: Setting
+metadata:
+  name: plugin-image-url-handler-setting
+spec:
+  forms:
+    - group: "setting"
+      label: "设置"
+      formSchema:
+        - $formkit: text
+          name: suffix
+          label: "图像处理后缀"
+          validation: "required"
+          help: "图像处理后缀。阿里云oss如：?image_process=format,webp"
+        - $formkit: text
+          name: excludedPaths
+          label: "排除路径"
+          help: "要排除的路径，多个路径,分割。如：/photos,/links"

@@ -1,76 +1,30 @@
-# plugin-starter
+## halo-plugin-image-url-handler
 
-Halo 2.0 插件开发快速开始模板。
+Halo 2.0 插件-图片链接处理
 
-## 开发环境
+### 插件说明
 
-插件开发的详细文档请查阅：<https://docs.halo.run/developer-guide/plugin/introduction>
+本插件主要为对象存储、CDN、nginx配置重定向等可设置图片处理参数的服务提供图片处理功能
 
-所需环境：
+### 功能逻辑
 
-1. Java 17
-2. Node 18
-3. pnpm 8
-4. Docker (可选)
+拦截所有html页面(默认排除后台页面、系统页面等，也可自定义排除路径)，解析出html页面中的图片链接(含`img`标签和`background-image`属性)，并在图片链接后拼上配置的图片处理后缀
 
-克隆项目：
+### 预览地址
 
-```bash
-git clone git@github.com:halo-sigs/plugin-starter.git
+[https://4xx.me](https://4xx.me)
 
-# 或者当你 fork 之后
+### 主题推荐
 
-git clone git@github.com:{your_github_id}/plugin-starter.git
-```
+- [4xx-first](https://4xx.me/archives/4xx-first-tutorial)
 
-```bash
-cd path/to/plugin-starter
-```
+### 插件效果图
 
-### 运行方式 1（推荐）
+图片处理前
+![图片处理前耗时.png](image%2F%CD%BC%C6%AC%B4%A6%C0%ED%C7%B0%BA%C4%CA%B1.png)
+图片处理后
+![图片处理后耗时.png](image%2F%CD%BC%C6%AC%B4%A6%C0%ED%BA%F3%BA%C4%CA%B1.png)
 
-> 此方式需要本地安装 Docker
+### 插件配置界面
 
-```bash
-# macOS / Linux
-./gradlew pnpmInstall
-
-# Windows
-./gradlew.bat pnpmInstall
-```
-
-```bash
-# macOS / Linux
-./gradlew haloServer
-
-# Windows
-./gradlew.bat haloServer
-```
-
-执行此命令后，会自动创建一个 Halo 的 Docker 容器并加载当前的插件，更多文档可查阅：<https://docs.halo.run/developer-guide/plugin/basics/devtools>
-
-### 运行方式 2
-
-> 此方式需要使用源码运行 Halo
-
-编译插件：
-
-```bash
-# macOS / Linux
-./gradlew build
-
-# Windows
-./gradlew.bat build
-```
-
-修改 Halo 配置文件：
-
-```yaml
-halo:
-  plugin:
-    runtime-mode: development
-    fixedPluginPath:
-      - "/path/to/plugin-starter"
-```
-
-最后重启 Halo 项目即可。
+![图片处理配置.png](image%2F%CD%BC%C6%AC%B4%A6%C0%ED%C5%E4%D6%C3.png)

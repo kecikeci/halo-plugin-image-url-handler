@@ -1,22 +1,19 @@
-# Refer https://docs.halo.run/developer-guide/plugin/basics/manifest
-
 apiVersion: plugin.halo.run/v1alpha1
 kind: Plugin
 metadata:
-  # The name defines how the plugin is invoked, A unique name
-  name: starter
+  name: plugin-image-url-handler
 spec:
   enabled: true
-  requires: ">=2.11.0"
+  requires: ">=2.10.0"
   author:
-    name: Halo
-    website: https://github.com/halo-dev
-  logo: logo.png
-  homepage: https://github.com/halo-dev/plugin-starter#readme
-  repo: https://github.com/halo-dev/plugin-starter
-  issues: https://github.com/halo-dev/plugin-starter/issues
-  displayName: "插件快速开始模板"
-  description: "这是一个插件快速开始模板"
+    name: Polar.
+    website: https://4xx.me
+  logo: https://4xx.me/upload/logo.ico
+  homepage: https://4xx.me
+  displayName: "图片url处理"
+  description: "为对象存储或CDN的图片处理提供支持。其本质就是在图片url后面拼接处理参数。"
+  settingName: plugin-image-url-handler-setting
+  configMapName: plugin-image-url-handler-configmap
   license:
     - name: "GPL-3.0"
-      url: "https://github.com/halo-dev/plugin-starter/blob/main/LICENSE"
+      url: "https://github.com/kecikeci/halo-plugin-image-url-handler/blob/master/LICENSE"
