@@ -3,6 +3,7 @@ package me.forxx.plugin;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import io.netty.buffer.ByteBufUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.reactivestreams.Publisher;
@@ -101,30 +102,66 @@ public class ResponseDecorator extends ServerHttpResponseDecorator {
     }
 
     @Override
-    @SuppressWarnings(value = "unchecked")
     public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-
         if (body instanceof Mono) {
             Mono<DataBuffer> monoBody = (Mono<DataBuffer>) body;
-            return super.writeWith(monoBody.map(dataBuffer -> {
-                DataBufferUtils.retain(dataBuffer); // 首先保留DataBuffer，避免被自动释放
-                byte[] originalContentByte = new byte[dataBuffer.readableByteCount()];
-                dataBuffer.read(originalContentByte);
-                DataBufferUtils.release(dataBuffer);// 释放掉内存
-
-                String originalContent = new String(originalContentByte, StandardCharsets.UTF_8);
-                String modifiedContent;
-                if (isLikelyHtml(originalContent)) {
-                    modifiedContent = addParamToLinksByStyle(addParamToLinksByImg(originalContent));
-                } else {
-                    modifiedContent = originalContent;
-                }
-                // 将修改后的内容转换回DataBuffer
-                return bufferFactory().wrap(modifiedContent.getBytes(StandardCharsets.UTF_8));
-            }));
+            return super.writeWith(monoBody.map(dataBuffer -> modifyContent(dataBuffer)));
         }
         return super.writeWith(body);
     }
+
+    private DataBuffer modifyContent(DataBuffer dataBuffer) {
+        try {
+            byte[] originalContentByte = readBytesFromDataBuffer(dataBuffer);
+            String originalContent = new String(originalContentByte, StandardCharsets.UTF_8);
+            String modifiedContent = processContent(originalContent);
+            return bufferFactory().wrap(modifiedContent.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            // 日志记录或其他异常处理逻辑
+            // Log the exception or handle it accordingly
+            return bufferFactory().wrap(new byte[0]);
+        }
+    }
+
+    private byte[] readBytesFromDataBuffer(DataBuffer dataBuffer) {
+        byte[] originalContentByte = new byte[dataBuffer.readableByteCount()];
+        dataBuffer.read(originalContentByte);
+        // 由于read操作后不再需要dataBuffer，因此在这里释放
+        DataBufferUtils.release(dataBuffer);
+        return originalContentByte;
+    }
+
+    private String processContent(String content) {
+        if (isLikelyHtml(content)) {
+            return addParamToLinksByStyle(addParamToLinksByImg(content));
+        } else {
+            return content;
+        }
+    }
+    @SuppressWarnings(value = "unchecked")
+    // public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
+    //
+    //     if (body instanceof Mono) {
+    //         Mono<DataBuffer> monoBody = (Mono<DataBuffer>) body;
+    //         return super.writeWith(monoBody.map(dataBuffer -> {
+    //             DataBufferUtils.retain(dataBuffer); // 首先保留DataBuffer，避免被自动释放
+    //             byte[] originalContentByte = new byte[dataBuffer.readableByteCount()];
+    //             dataBuffer.read(originalContentByte);
+    //             DataBufferUtils.release(dataBuffer);// 释放掉内存
+    //
+    //             String originalContent = new String(originalContentByte, StandardCharsets.UTF_8);
+    //             String modifiedContent;
+    //             if (isLikelyHtml(originalContent)) {
+    //                 modifiedContent = addParamToLinksByStyle(addParamToLinksByImg(originalContent));
+    //             } else {
+    //                 modifiedContent = originalContent;
+    //             }
+    //             // 将修改后的内容转换回DataBuffer
+    //             return bufferFactory().wrap(modifiedContent.getBytes(StandardCharsets.UTF_8));
+    //         }));
+    //     }
+    //     return super.writeWith(body);
+    // }
 
     /**
      * 判断是否是html
