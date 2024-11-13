@@ -5,6 +5,7 @@ Halo 2.0 插件-图片链接处理
 ### 插件说明
 
 本插件主要为对象存储、CDN、nginx配置重定向等可设置图片处理参数的服务提供图片处理功能
+
 参考[https://github.com/halo-sigs/plugin-page-cache](https://github.com/halo-sigs/plugin-page-cache)项目部分逻辑，感谢！
 
 ### 功能逻辑
