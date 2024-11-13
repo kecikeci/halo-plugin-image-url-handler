@@ -1,8 +1,8 @@
 plugins {
     id 'java'
-//    id "com.github.node-gradle.node" version "5.0.0"
+    id "com.github.node-gradle.node" version "7.0.2"
     id "io.freefair.lombok" version "8.0.1"
-    id "run.halo.plugin.devtools" version "0.0.9"
+    id "run.halo.plugin.devtools" version "0.2.0"
 }
 
 group 'me.forxx.plugin'
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation platform('run.halo.tools.platform:plugin:2.11.0-SNAPSHOT')
+    implementation platform('run.halo.tools.platform:plugin:2.20.0-SNAPSHOT')
     compileOnly 'run.halo.app:api'
 
     testImplementation 'run.halo.app:api'
@@ -31,18 +31,18 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
 }
 
-//node {
-//    nodeProjectDir = file("${project.projectDir}/ui")
-//}
+node {
+    nodeProjectDir = file("${project.projectDir}/ui")
+}
 
-//tasks.register('buildFrontend', PnpmTask) {
-//    args = ['build']
-//    dependsOn('installDepsForUI')
-//}
-//
-//tasks.register('installDepsForUI', PnpmTask) {
-//    args = ['install']
-//}
+tasks.register('buildFrontend', PnpmTask) {
+    args = ['build']
+    dependsOn('installDepsForUI')
+}
+
+tasks.register('installDepsForUI', PnpmTask) {
+    args = ['install']
+}
 
 build {
     // build frontend before build
@@ -52,5 +52,5 @@ build {
 }
 
 halo {
-    version = '2.11'
+    version = '2.20'
 }

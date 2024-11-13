@@ -1,29 +1,45 @@
 package me.forxx.plugin;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import io.netty.buffer.ByteBufUtil;
+import lombok.NonNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import run.halo.app.infra.utils.PathUtils;
+import run.halo.app.theme.router.ModelConst;
+
+import static java.nio.ByteBuffer.allocate;
 
 /**
  * @desc 响应装饰器（重构响应体）
  */
 public class ResponseDecorator extends ServerHttpResponseDecorator {
 
-    private static String suffix;
+    Logger log = LoggerFactory.getLogger(ImageUrlHandlerWebFilter.class);
 
-    public ResponseDecorator(ServerHttpResponse delegate,String path) {
-        super(delegate);
-        suffix = path;
+    private final ServerWebExchange exchange;
+    private final String suffix;
+
+    public ResponseDecorator(ServerWebExchange exchange,String suffix) {
+        super(exchange.getResponse());
+        this.exchange = exchange;
+        this.suffix = suffix;
     }
 
     /**
@@ -35,7 +51,7 @@ public class ResponseDecorator extends ServerHttpResponseDecorator {
      * @author GMQ
      * @date 2024/5/26 下午7:47
      **/
-    public static String addParamToLinksByImg(String html) {
+    public String addParamToLinksByImg(String html) {
         // 正则表达式匹配<img>标签中的src属性
         String regex =
             "(<img[^>]*?)src\\s*=\\s*(\"|')((http|https)://|//)[^>]*?([^\"']|\\s)*\\2[^>]*>";
@@ -52,7 +68,7 @@ public class ResponseDecorator extends ServerHttpResponseDecorator {
                 String src = img.attr("src");
                 if (PathUtils.isAbsoluteUri(src)) {
                     if (!src.contains("?")) {
-                        img.attr("src", src + suffix);
+                        img.attr("src", src + this.suffix);
                     }
                 }
             });
@@ -74,7 +90,7 @@ public class ResponseDecorator extends ServerHttpResponseDecorator {
      * @author GMQ
      * @date 2024/5/26 下午7:46
      **/
-    public static String addParamToLinksByStyle(String html) {
+    public String addParamToLinksByStyle(String html) {
         // 正则表达式匹配<img>标签中的src属性
         String regex = "(?:background-image:\\s*url\\()([^\"']*)\\)";
         // 使用正则表达式和模式匹配
@@ -88,7 +104,7 @@ public class ResponseDecorator extends ServerHttpResponseDecorator {
             if (PathUtils.isAbsoluteUri(src)) {
                 if (!src.contains("?")) {
                     // 添加?x=f到src属性
-                    String updatedSrc = src + suffix;
+                    String updatedSrc = src + this.suffix;
                     String replacement = matcher.group().replace(src, updatedSrc);
                     // 替换原始的src属性
                     matcher.appendReplacement(modifiedHtml, replacement);
@@ -102,25 +118,49 @@ public class ResponseDecorator extends ServerHttpResponseDecorator {
     }
 
     @Override
-    public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-        if (body instanceof Mono) {
-            Mono<DataBuffer> monoBody = (Mono<DataBuffer>) body;
-            return super.writeWith(monoBody.map(dataBuffer -> modifyContent(dataBuffer)));
+    @NonNull
+    public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
+        if (responseProcessable(exchange)) {
+            body = modifyContent(body);
         }
         return super.writeWith(body);
     }
 
-    private DataBuffer modifyContent(DataBuffer dataBuffer) {
-        try {
-            byte[] originalContentByte = readBytesFromDataBuffer(dataBuffer);
-            String originalContent = new String(originalContentByte, StandardCharsets.UTF_8);
-            String modifiedContent = processContent(originalContent);
-            return bufferFactory().wrap(modifiedContent.getBytes(StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            // 日志记录或其他异常处理逻辑
-            // Log the exception or handle it accordingly
-            return bufferFactory().wrap(new byte[0]);
+    @Override
+    public Mono<Void> writeAndFlushWith(@NonNull Publisher<? extends Publisher<? extends DataBuffer>> body) {
+        if (responseProcessable(exchange)) {
+            if (body instanceof Flux<? extends Publisher<? extends DataBuffer>> fluxBody) {
+                body = fluxBody.concatMap(this::modifyContent)
+                    .window(1);
+            } else if (body instanceof Mono<? extends Publisher<? extends DataBuffer>> monoBody) {
+                body = monoBody.flatMapMany(this::modifyContent)
+                    .window(1);
+            }
         }
+        return super.writeAndFlushWith(body);
+    }
+
+    private boolean responseProcessable(ServerWebExchange exchange) {
+        //判断是否需要处理
+        var response = exchange.getResponse();
+        if (!MediaType.TEXT_HTML.equals(response.getHeaders().getContentType())) {
+            return false;
+        }
+        var statusCode = response.getStatusCode();
+        if (statusCode == null || !statusCode.isSameCodeAs(HttpStatus.OK)) {
+            return false;
+        }
+        return exchange.getAttributeOrDefault(ModelConst.POWERED_BY_HALO_TEMPLATE_ENGINE, false);
+    }
+
+    private Flux<? extends DataBuffer> modifyContent(Publisher<? extends DataBuffer> body) {
+        return Flux.from(body)
+            .map(dataBuffer -> {
+                byte[] originalContentByte = readBytesFromDataBuffer(dataBuffer);
+                String originalContent = new String(originalContentByte, StandardCharsets.UTF_8);
+                String modifiedContent = processContent(originalContent);
+                return bufferFactory().wrap(modifiedContent.getBytes(StandardCharsets.UTF_8));
+            });
     }
 
     private byte[] readBytesFromDataBuffer(DataBuffer dataBuffer) {
