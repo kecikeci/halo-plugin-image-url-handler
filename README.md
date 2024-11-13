@@ -19,6 +19,10 @@ Halo 2.0 插件-图片链接处理
 
 - [4xx-first](https://4xx.me/archives/4xx-first-tutorial)
 
+### 开源方案实现
+
+- [Caddy2+imgproxy+Minio实现请求链接处理图片](https://4xx.me/archives/1723015245618)
+
 ### 插件效果图
 
 图片处理前
